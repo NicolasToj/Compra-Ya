@@ -1,47 +1,81 @@
-🛒 CompraYa
-CompraYa es una plataforma de e-commerce para compra y venta en línea, al estilo Mercado Libre, pensada como una empresa conjunta donde los vendedores son cuentas controladas por la administración (no un marketplace abierto a cualquiera).
-El color característico de la marca es el rojo, y está pensada desde el inicio para funcionar igual en PC y en móvil.
+# 🛒 CompraYa
+
+> **Marketplace de compra y venta en línea, al estilo Mercado Libre.** Una empresa conjunta donde los vendedores son cuentas controladas por la administración, no un mercado abierto a cualquiera.
+
+![Estado](https://img.shields.io/badge/estado-en%20desarrollo-red)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![RLS](https://img.shields.io/badge/seguridad-RLS%20por%20rol-red)
+![Responsive](https://img.shields.io/badge/responsive-PC%20%2B%20m%C3%B3vil-red)
+
+El color característico de la marca es el **rojo** 🔴, y está pensada desde el inicio para funcionar igual de bien en **computadora y en celular**.
+
 ---
-🎯 ¿Qué hace?
-La plataforma maneja tres tipos de usuario, cada uno con su propio espacio:
-Comprador — navega la tienda, busca productos, filtra por categoría, guarda favoritos, ve "lo último que viste" y productos relacionados, arma su carrito, compra y puede hablar con el vendedor por chat.
-Vendedor — cuentas creadas por el administrador. Publican productos (con foto, precio, stock, descripción, devolución y fecha de entrega), gestionan su inventario, responden chats y ven el progreso de sus ventas.
-Administrador — administración de sistemas. Ve el registro de auditoría de todos los movimientos, todas las conversaciones archivadas, gestiona usuarios y roles, crea vendedores, y modera contenido (deshabilitar cuentas, ocultar mensajes, revisar reportes).
+
+## 🎯 Roles del sistema
+
+| Rol | Qué puede hacer |
+|:---|:---|
+| 🛍️ **Comprador** | Navega la tienda, busca y filtra productos, guarda favoritos, ve "lo último que viste" y relacionados, arma su carrito, compra y chatea con el vendedor. |
+| 🏪 **Vendedor** | Cuentas creadas por el admin. Publican productos (foto, precio, stock, descripción, devolución, entrega), gestionan inventario, responden chats y ven el progreso de sus ventas. |
+| 🛡️ **Administrador** | Administración de sistemas. Ve la auditoría de todos los movimientos y las conversaciones archivadas, crea vendedores, gestiona usuarios y modera contenido (deshabilitar cuentas, ocultar mensajes, revisar reportes). |
+
 ---
-🧱 Base de datos
-La base está construida en PostgreSQL sobre Supabase, con seguridad a nivel de fila (RLS) para que cada rol solo vea y toque lo que le corresponde.
-Tablas principales:
-Tabla	Para qué sirve
-`perfiles`	Datos y rol de cada usuario (comprador / vendedor / admin)
-`categorias`	Categorías de la tienda
-`productos`	Productos publicados por los vendedores
-`producto_imagenes`	Galería de fotos de cada producto
-`favoritos` / `vistos`	Favoritos y el historial "lo último que viste"
-`pedidos` / `pedido_detalle`	Las compras y su detalle
-`cupones`	Cupones de descuento
-`conversaciones` / `mensajes`	Chat entre comprador y vendedor (archivado)
-`tickets` / `ticket_mensajes`	Soporte hacia el administrador
-`reportes`	Reportes de contenido para moderación
-`auditoria`	Registro de cada movimiento importante (solo lo ve el admin)
-Los scripts SQL están en la carpeta `base-de-datos/`:
-`compraya_base_de_datos.sql` — crea toda la estructura inicial.
-`compraya_base_de_datos_v2.sql` — agrega soporte, reportes y la capa de control del administrador.
+
+## 🧱 Base de datos
+
+Construida en **PostgreSQL sobre Supabase**, con seguridad a nivel de fila (**RLS**) para que cada rol solo vea y toque lo que le corresponde.
+
+| Tabla | Para qué sirve |
+|:---|:---|
+| `perfiles` | Datos y rol de cada usuario |
+| `categorias` | Categorías de la tienda |
+| `productos` | Productos publicados por los vendedores |
+| `producto_imagenes` | Galería de fotos de cada producto |
+| `favoritos` / `vistos` | Favoritos e historial "lo último que viste" |
+| `pedidos` / `pedido_detalle` | Las compras y su detalle |
+| `cupones` | Cupones de descuento |
+| `conversaciones` / `mensajes` | Chat comprador–vendedor (archivado) |
+| `tickets` / `ticket_mensajes` | Soporte hacia el administrador |
+| `reportes` | Reportes de contenido para moderación |
+| `auditoria` | Registro de cada movimiento (solo lo ve el admin) |
+
+📂 Los scripts SQL están en la carpeta [`base-de-datos/`](./base-de-datos):
+
+- **`compraya_base_de_datos.sql`** — crea toda la estructura inicial.
+- **`compraya_base_de_datos_v2.sql`** — agrega soporte, reportes y la capa de control del administrador.
+
 ---
-🛠️ Stack
-Base de datos / Backend: Supabase (PostgreSQL, Auth, Storage)
-Seguridad: Row Level Security (RLS) por rol
-Frontend: (en construcción)
+
+## 🛠️ Stack
+
+| Capa | Tecnología |
+|:---|:---|
+| Base de datos | PostgreSQL (Supabase) |
+| Autenticación | Supabase Auth |
+| Almacenamiento | Supabase Storage |
+| Seguridad | Row Level Security (RLS) por rol |
+| Frontend | _en construcción_ 🔜 |
+
 ---
-🚧 Estado del proyecto
-Etapa	Estado
-Definición del proyecto	✅
-Base de datos	✅
-Backlog (historias de usuario)	✅
-Frontend	🔜 En construcción
-Conexión front + base	⬜
-Despliegue	⬜
+
+## 🚧 Estado del proyecto
+
+| Etapa | Estado |
+|:---|:---:|
+| Definición del proyecto | ✅ |
+| Base de datos | ✅ |
+| Backlog (historias de usuario) | ✅ |
+| Frontend | 🔜 |
+| Conexión front + base | ⬜ |
+| Despliegue | ⬜ |
+
 ---
-👤 Autor
-Proyecto desarrollado por Nicolás Torrejón.
+
+## 👤 Autor
+
+Proyecto desarrollado por **Nicolás Torrejón**.
+
 ---
-> Proyecto en desarrollo. Este repositorio documenta su construcción paso a paso.
+
+<sub>Proyecto en desarrollo. Este repositorio documenta su construcción paso a paso. 🚀</sub>
