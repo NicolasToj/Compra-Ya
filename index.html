@@ -336,7 +336,7 @@
     <button class="menu-movil" onclick="document.querySelector('.barra2').classList.toggle('abierto')">☰</button>
     <div class="acciones">
       <div class="cuenta" id="cuenta">
-        <button class="acc" id="accLogin"><span class="ic">👤</span><span class="lbl" id="accLoginLbl">Ingresa</span></button>
+        <button class="acc" id="accLogin" onclick="abrirLogin()"><span class="ic">👤</span><span class="lbl" id="accLoginLbl">Ingresa</span></button>
         <div class="perfil-drop" id="perfilDrop"></div>
       </div>
       <a class="acc" onclick="verCompras()"><span class="ic">📦</span><span class="lbl">Compras</span></a>
@@ -598,9 +598,9 @@ function verCategoria(nombre){
 let TODOS=[];
 async function cargarProductos(){
   try{
-    const {data,error}=await sb.from('productos')
+    const {data,error}=await conTimeout(sb.from('productos')
       .select('id,titulo,precio,descuento,stock,descripcion,devolucion,fecha_entrega,estado,vendedor_id,categoria_id,producto_imagenes(url)')
-      .eq('estado','activo').order('creado',{ascending:false});
+      .eq('estado','activo').order('creado',{ascending:false}),8000);
     if(error) throw error;
     TODOS=(data&&data.length)?data:DEMO;
     TODOS.forEach(p=>{ if(p.categoria_id&&!p.cat){ const cc=CATS[p.categoria_id-1]; if(cc) p.cat=cc.n; } });
@@ -978,11 +978,13 @@ async function entrarGoogle(){ try{ const {error}=await sb.auth.signInWithOAuth(
 /* ===== Sesión ===== */
 function rolLindo(r){ return r==='admin'?'Administrador':(r==='vendedor'?'Vendedor':'Comprador'); }
 async function refrescarSesion(){
-  const {data:{session}}=await sb.auth.getSession();
+  let session=null;
+  try{ const r=await conTimeout(sb.auth.getSession(),8000); session=r.data.session; }
+  catch(e){ console.warn('getSession:',e.message); }
   if(session){
     MIID=session.user.id;
-    const {data:perfil}=await sb.from('perfiles').select('nombre,rol,activo').eq('id',MIID).single();
-    usuarioActual=perfil||{nombre:session.user.email,rol:'comprador'};
+    try{ const {data:perfil}=await conTimeout(sb.from('perfiles').select('nombre,rol,activo').eq('id',MIID).single(),8000); usuarioActual=perfil||{nombre:session.user.email,rol:'comprador'}; }
+    catch(e){ usuarioActual={nombre:session.user.email,rol:'comprador'}; }
     vistaRol=usuarioActual.rol;
     pintarSesion(true); cargarFavs(); cargarAvisos(); pintarVistosHome();
   } else { MIID=null; usuarioActual=null; vistaRol=null; pintarSesion(false); }
