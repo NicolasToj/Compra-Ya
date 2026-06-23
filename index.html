@@ -174,6 +174,37 @@
   .det-cant{display:flex;align-items:center;gap:12px;margin:14px 0}
   .det-cant button{width:34px;height:34px;border:1.5px solid #ddd;border-radius:9px;font-size:18px;font-weight:700}
   .det-cant span{font-weight:700;min-width:24px;text-align:center}
+  .det-cant{font-size:13px;color:var(--ink2)}
+  .detalle{max-width:920px}
+  .gal-big{aspect-ratio:1;border-radius:16px;background:linear-gradient(135deg,#fafafb,#f0f0f4);display:grid;place-items:center;overflow:hidden}
+  .gal-big img{width:100%;height:100%;object-fit:contain}
+  .gal-thumbs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .gal-th{width:62px;height:62px;border-radius:10px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:#f3f3f6}
+  .gal-th.on{border-color:var(--rojo)}
+  .gal-th img{width:100%;height:100%;object-fit:cover}
+  .det-acciones{display:flex;gap:8px;margin-top:14px}
+  .det-acc{flex:1;border:1.5px solid #e2e2e8;border-radius:10px;padding:10px;font-size:12.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:5px}
+  .det-acc:hover{border-color:var(--rojo);color:var(--rojo)}
+  .det-acc.fav-on{border-color:var(--rojo);color:var(--rojo);background:var(--tint)}
+  .resenas{padding:0 28px 28px}
+  .resena-form{background:#fafafb;border-radius:14px;padding:14px;margin-bottom:16px}
+  .resena-form textarea{width:100%;border:1.5px solid #e2e2e8;border-radius:10px;padding:10px;font-size:13.5px;margin-top:8px}
+  .estrellas-pick{display:flex;gap:4px;font-size:26px;color:#ddd;cursor:pointer}
+  .estrellas-pick span.on{color:var(--amber)}
+  .resena{border-bottom:1px solid var(--linea);padding:12px 0}
+  .resena .r-top{display:flex;justify-content:space-between;margin-bottom:4px}
+  .resena p{font-size:13.5px;color:#444;margin-bottom:3px}
+  /* Zona de subida de imágenes */
+  .dropzone{border:2px dashed #cfcfd8;border-radius:14px;padding:26px;text-align:center;cursor:pointer;transition:all .15s;background:#fafafb;grid-column:1/-1}
+  .dropzone:hover,.dropzone.drag{border-color:var(--rojo);background:var(--tint)}
+  .dropzone .up-ic{font-size:38px;margin-bottom:6px}
+  .dropzone p{font-size:13px;color:var(--ink2);font-weight:600}
+  .dropzone small{font-size:11.5px;color:#aaa}
+  .previews{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;grid-column:1/-1}
+  .prev{position:relative;width:84px;height:84px;border-radius:11px;overflow:hidden;box-shadow:var(--s1)}
+  .prev img{width:100%;height:100%;object-fit:cover}
+  .prev .x{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.6);color:#fff;width:22px;height:22px;border-radius:50%;font-size:14px;display:grid;place-items:center}
+  .prev.subiendo{display:grid;place-items:center;background:#f0f0f4;font-size:11px;color:#999}
 
   /* Drawer lateral genérico */
   .backdrop{position:fixed;inset:0;background:rgba(15,15,30,.45);z-index:99;display:none}
@@ -608,6 +639,7 @@ async function cargarProductos(){
   pintarGrilla(TODOS);
   pintarVistosHome();
   buildSugerencias();
+  if(typeof actualizarHero==='function') actualizarHero();
 }
 
 /* ===== Categorías ===== */
@@ -621,25 +653,37 @@ function filtrarCatNombre(nombre){
 }
 function categoriaNombre(p){ if(p.cat) return p.cat; return ''; }
 function filtrarBaratos(){ document.getElementById('tituloGrilla').textContent='💸 Menos de S/100'; pintarGrilla(TODOS.filter(p=>p.precio<100)); }
-function irHome(){ document.getElementById('tituloGrilla').textContent='⭐ Productos destacados'; pintarGrilla(TODOS); window.scrollTo({top:0,behavior:'smooth'}); }
+function irHome(){ cerrarTodoFull(); document.getElementById('tituloGrilla').textContent='⭐ Productos destacados'; pintarGrilla(TODOS); window.scrollTo({top:0,behavior:'smooth'}); }
+function cerrarTodoFull(){ ['vista','panelVendedor','panelAdmin'].forEach(id=>document.getElementById(id).classList.remove('on')); document.getElementById('ovDetalle').classList.remove('abierto'); cerrarDrawerReal(); cerrarChatReal(); cerrarAsis(); cerrarMegacat(); cerrarBuscaDrop(); }
 function buscar(){
+  cerrarTodoFull();
   const q=document.getElementById('busca').value.trim().toLowerCase();
   if(!q){ irHome(); return; }
   pintarGrilla(TODOS.filter(p=>p.titulo.toLowerCase().includes(q)));
   document.getElementById('tituloGrilla').textContent='🔍 Resultados para "'+q+'"';
+  window.scrollTo({top:document.getElementById('tituloGrilla').offsetTop-90,behavior:'smooth'});
 }
 document.getElementById('busca').addEventListener('keydown',e=>{if(e.key==='Enter')buscar();});
 
-/* ===== Detalle de producto ===== */
+/* ===== Detalle de producto (estilo AliExpress) ===== */
+let PROD_ACTUAL=null;
 async function verProducto(idx){
   const p=LISTA[idx]; if(!p) return;
   if(p.demo){ toast('Es un producto de ejemplo. Sube productos reales desde el panel de vendedor 🏪'); return; }
+  PROD_ACTUAL=p; CANT=1;
   registrarVisto(p.id);
   const off=p.descuento||0;
+  const imgs=(p.producto_imagenes||[]).map(i=>i.url).filter(Boolean);
+  const fav=MISFAVS.has(p.id);
+  const bigHTML=imgs.length?`<img src="${imgs[0]}" id="galBigImg" alt="">`:`<span style="font-size:140px">${emojiCat(p.cat||'')}</span>`;
+  const thumbs=imgs.length>1?`<div class="gal-thumbs">${imgs.map((u,i)=>`<div class="gal-th ${i===0?'on':''}" onclick="cambiarFoto('${u}',this)"><img src="${u}"></div>`).join('')}</div>`:'';
   document.getElementById('detalle').innerHTML=`
     <button class="cerrar" onclick="cerrarDetalle()">×</button>
     <div class="det-grid">
-      <div class="det-foto">${fotoHTML(p)}</div>
+      <div>
+        <div class="gal-big" id="galBig">${bigHTML}</div>
+        ${thumbs}
+      </div>
       <div class="det-info">
         <h2>${p.titulo}</h2>
         <div class="det-precio">${fmt(p.precio)} ${off?`<small>${off}% OFF</small>`:''}</div>
@@ -648,19 +692,68 @@ async function verProducto(idx){
         <div class="det-meta">↩️ ${p.devolucion||'Devolución gratis, tienes 30 días'}</div>
         <div class="det-meta">📅 Entrega: ${p.fecha_entrega||'Próximamente'}</div>
         <div class="det-desc">${p.descripcion||'Sin descripción.'}</div>
-        <div class="det-cant"><button onclick="cant(-1)">−</button><span id="cantN">1</span><button onclick="cant(1)">+</button></div>
+        <div class="det-cant">Cantidad: <button onclick="cant(-1)">−</button><span id="cantN">1</span><button onclick="cant(1)">+</button></div>
         <button class="btn" onclick="comprarAhora(${idx})">Comprar ahora</button>
-        <button class="btn sec" style="margin-top:8px" onclick="addCartIdx(${idx});cerrarDetalle()">Agregar al carrito</button>
-        <button class="btn sec" style="margin-top:8px" onclick="hablarVendedor(${idx})">💬 Hablar con el vendedor</button>
+        <button class="btn sec" style="margin-top:8px" onclick="addCartIdx(${idx});cerrarDetalle()">🛍️ Agregar al carrito</button>
+        <div class="det-acciones">
+          <button class="det-acc ${fav?'fav-on':''}" id="detFav" onclick="toggleFavId('${p.id}',this)">${fav?'❤️':'🤍'} Favorito</button>
+          <button class="det-acc" onclick="compartirProd()">🔗 Compartir</button>
+          <button class="det-acc" onclick="hablarVendedor(${idx})">💬 Vendedor</button>
+        </div>
       </div>
-    </div>`;
+    </div>
+    <div class="resenas" id="resenas"><div class="vacio">Cargando reseñas...</div></div>`;
   document.getElementById('ovDetalle').classList.add('abierto'); pushHist();
+  cargarResenas(p.id);
+}
+function cambiarFoto(url,el){ const big=document.getElementById('galBigImg'); if(big) big.src=url; document.querySelectorAll('.gal-th').forEach(t=>t.classList.remove('on')); el.classList.add('on'); }
+function compartirProd(){
+  const url=location.href.split('#')[0];
+  const txt='Mira "'+(PROD_ACTUAL?PROD_ACTUAL.titulo:'este producto')+'" en CompraYa';
+  if(navigator.share){ navigator.share({title:'CompraYa',text:txt,url}).catch(()=>{}); }
+  else { try{ navigator.clipboard.writeText(txt+' '+url); }catch(e){} toast('Enlace copiado 🔗'); }
+}
+async function toggleFavId(pid,btn){
+  if(!MIID){ abrirLogin(); return; }
+  try{
+    if(MISFAVS.has(pid)){ await sb.from('favoritos').delete().eq('usuario_id',MIID).eq('producto_id',pid); MISFAVS.delete(pid); btn.classList.remove('fav-on'); btn.innerHTML='🤍 Favorito'; }
+    else { await sb.from('favoritos').insert({usuario_id:MIID,producto_id:pid}); MISFAVS.add(pid); btn.classList.add('fav-on'); btn.innerHTML='❤️ Favorito'; toast('Agregado a favoritos ❤️'); }
+    marcarFavs();
+  }catch(e){ toast('No se pudo'); }
 }
 let CANT=1;
 function cant(d){ CANT=Math.max(1,CANT+d); document.getElementById('cantN').textContent=CANT; }
 function cerrarDetalle(){ volverHist(cerrarDetalleReal); }
 function cerrarDetalleReal(){ document.getElementById('ovDetalle').classList.remove('abierto'); CANT=1; }
 document.getElementById('ovDetalle').addEventListener('click',e=>{if(e.target.id==='ovDetalle')cerrarDetalle();});
+
+/* ===== Reseñas ===== */
+async function cargarResenas(pid){
+  const cont=document.getElementById('resenas'); if(!cont) return;
+  let lista=[];
+  try{ const {data}=await sb.from('resenas').select('nombre,estrellas,texto,fecha').eq('producto_id',pid).order('fecha',{ascending:false}); lista=data||[]; }catch(e){}
+  const prom=lista.length?(lista.reduce((a,r)=>a+r.estrellas,0)/lista.length).toFixed(1):null;
+  let h=`<h3 class="cat-h3">⭐ Reseñas ${prom?`<span style="color:var(--amber)">${prom}</span> <small style="color:#999;font-weight:400">(${lista.length})</small>`:''}</h3>`;
+  if(MIID){
+    h+=`<div class="resena-form">
+      <div class="estrellas-pick" id="estPick">${[1,2,3,4,5].map(n=>`<span data-n="${n}" onclick="pickStar(${n})">★</span>`).join('')}</div>
+      <textarea id="resTxt" rows="2" placeholder="Cuéntanos qué te pareció..."></textarea>
+      <button class="btn" style="max-width:160px;margin-top:8px" onclick="enviarResena('${pid}')">Publicar reseña</button>
+    </div>`;
+  } else h+='<p style="color:#999;font-size:13px;margin-bottom:12px">Inicia sesión para dejar tu reseña.</p>';
+  h+= lista.length? lista.map(r=>`<div class="resena"><div class="r-top"><b>${r.nombre||'Usuario'}</b><span style="color:var(--amber)">${'★'.repeat(r.estrellas)}${'☆'.repeat(5-r.estrellas)}</span></div><p>${r.texto||''}</p><small style="color:#aaa">${new Date(r.fecha).toLocaleDateString('es-PE')}</small></div>`).join('') : '<div class="vacio" style="padding:24px"><div class="e">💬</div>Aún no hay reseñas. ¡Sé el primero!</div>';
+  cont.innerHTML=h;
+}
+let estrellaSel=5;
+function pickStar(n){ estrellaSel=n; document.querySelectorAll('#estPick span').forEach(s=>s.classList.toggle('on',parseInt(s.dataset.n)<=n)); }
+async function enviarResena(pid){
+  const txt=document.getElementById('resTxt').value.trim();
+  if(!txt){ toast('Escribe algo en tu reseña'); return; }
+  try{
+    await sb.from('resenas').insert({producto_id:pid,usuario_id:MIID,nombre:(usuarioActual&&usuarioActual.nombre)||'Usuario',estrellas:estrellaSel,texto:txt});
+    estrellaSel=5; toast('¡Gracias por tu reseña! ⭐'); cargarResenas(pid);
+  }catch(e){ toast('No se pudo publicar'); }
+}
 
 /* ===== Vistos ===== */
 async function registrarVisto(pid){
@@ -844,6 +937,7 @@ function tabVend(t){
   if(t==='prod') vendProductos(); else if(t==='venta') vendVentas(); else vendChats();
 }
 async function vendProductos(){
+  IMGS_SUBIDAS=[];
   const b=document.getElementById('vendBody');
   b.innerHTML=`<div class="seccion"><h2 style="font-size:17px;margin-bottom:14px">➕ Nuevo producto</h2>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -852,18 +946,57 @@ async function vendProductos(){
       <div class="campo"><label>Precio (S/)</label><input id="npPre" type="number" min="0" placeholder="0.00"></div>
       <div class="campo"><label>Stock</label><input id="npStk" type="number" min="0" placeholder="0"></div>
       <div class="campo"><label>Descuento %</label><input id="npOff" type="number" min="0" max="90" placeholder="0"></div>
-      <div class="campo"><label>Imagen (URL, opcional)</label><input id="npImg" placeholder="https://..."></div>
-      <div class="campo" style="grid-column:1/-1"><label>Descripción</label><textarea id="npDesc" rows="2" placeholder="Describe tu producto"></textarea></div>
-      <div class="campo"><label>Política de devolución</label><input id="npDev" placeholder="Devolución gratis 30 días"></div>
       <div class="campo"><label>Fecha de entrega</label><input id="npFe" placeholder="Próximamente"></div>
+      <div class="campo" style="grid-column:1/-1"><label>Imágenes del producto *</label>
+        <div class="dropzone" id="dropzone" onclick="document.getElementById('npFiles').click()">
+          <div class="up-ic">⬆️</div><p>Arrastra tus fotos aquí o haz clic para elegir</p><small>JPG o PNG · puedes subir varias</small>
+          <input type="file" id="npFiles" accept="image/*" multiple hidden>
+        </div>
+        <div class="previews" id="npPreviews"></div>
+      </div>
+      <div class="campo" style="grid-column:1/-1"><label>Descripción</label><textarea id="npDesc" rows="2" placeholder="Describe tu producto"></textarea></div>
+      <div class="campo" style="grid-column:1/-1"><label>Política de devolución</label><input id="npDev" placeholder="Devolución gratis 30 días"></div>
     </div>
     <button class="btn" style="max-width:240px" onclick="crearProducto()">Publicar producto</button></div>
     <div class="seccion"><h2 style="font-size:17px;margin-bottom:14px">📦 Mis productos</h2><div id="misProds">Cargando...</div></div>`;
+  configurarDropzone();
   listarMisProds();
 }
+let IMGS_SUBIDAS=[];
+function configurarDropzone(){
+  const dz=document.getElementById('dropzone'), inp=document.getElementById('npFiles');
+  if(!dz) return;
+  inp.addEventListener('change',e=>manejarArchivos(e.target.files));
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');manejarArchivos(e.dataTransfer.files);});
+}
+async function manejarArchivos(files){
+  for(const file of files){
+    if(!file.type.startsWith('image/')) continue;
+    const id='p'+Date.now()+Math.random().toString(36).slice(2,6);
+    const prev=document.getElementById('npPreviews');
+    prev.insertAdjacentHTML('beforeend',`<div class="prev subiendo" id="${id}">Subiendo...</div>`);
+    try{
+      const url=await subirImagen(file);
+      IMGS_SUBIDAS.push(url);
+      document.getElementById(id).className='prev';
+      document.getElementById(id).innerHTML=`<img src="${url}"><span class="x" onclick="quitarImg('${url}','${id}')">×</span>`;
+    }catch(e){ document.getElementById(id).innerHTML='❌'; toast('No se pudo subir una imagen: '+e.message); }
+  }
+}
+async function subirImagen(file){
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+  const path=MIID+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
+  const {error}=await sb.storage.from('productos').upload(path,file,{upsert:false,contentType:file.type});
+  if(error) throw error;
+  return sb.storage.from('productos').getPublicUrl(path).data.publicUrl;
+}
+function quitarImg(url,id){ IMGS_SUBIDAS=IMGS_SUBIDAS.filter(u=>u!==url); const el=document.getElementById(id); if(el) el.remove(); }
 async function crearProducto(){
   const tit=npTit.value.trim(), pre=parseFloat(npPre.value), stk=parseInt(npStk.value||'0');
   if(!tit||isNaN(pre)){ toast('Pon al menos título y precio'); return; }
+  if(!IMGS_SUBIDAS.length){ toast('Sube al menos una imagen del producto 📷'); return; }
   const catId=CATS.findIndex(c=>c.n===npCat.value)+1;
   try{
     const {data:prod,error}=await sb.from('productos').insert({
@@ -871,9 +1004,9 @@ async function crearProducto(){
       descripcion:npDesc.value.trim(),devolucion:npDev.value.trim(),fecha_entrega:npFe.value.trim()||'Próximamente',categoria_id:catId
     }).select().single();
     if(error) throw error;
-    if(npImg.value.trim()) await sb.from('producto_imagenes').insert({producto_id:prod.id,url:npImg.value.trim()});
-    toast('¡Producto publicado! 🎉'); listarMisProds(); cargarProductos();
-    ['npTit','npPre','npStk','npOff','npImg','npDesc','npDev','npFe'].forEach(id=>document.getElementById(id).value='');
+    const filas=IMGS_SUBIDAS.map(u=>({producto_id:prod.id,url:u}));
+    await sb.from('producto_imagenes').insert(filas);
+    toast('¡Producto publicado! 🎉'); IMGS_SUBIDAS=[]; vendProductos(); cargarProductos();
   }catch(e){ toast('No se pudo publicar: '+e.message); }
 }
 async function listarMisProds(){
@@ -1033,14 +1166,27 @@ let heroSet=DEMO.slice(0,5), hi=0;
 const dots=document.getElementById('dots');
 function setHeroDots(){ dots.innerHTML=heroSet.map((_,i)=>`<i class="${i===0?'on':''}" onclick="irHeroDot(${i})"></i>`).join(''); }
 function pintarHero(){
-  const p=heroSet[hi]; const card=document.getElementById('heroCard');
+  const p=heroSet[hi]; if(!p) return; const card=document.getElementById('heroCard'), ph=document.getElementById('hcPh');
   card.style.opacity=0; card.style.transform='translateY(-50%) scale(.96)';
-  setTimeout(()=>{ document.getElementById('hcPh').textContent=p.demo?p.e:emojiCat(p.cat); document.getElementById('hcT').textContent=(p.titulo||'').slice(0,40); document.getElementById('hcP').textContent=fmt(p.precio); card.style.opacity=1; card.style.transform='translateY(-50%) scale(1)'; },220);
+  const img=imgDe(p);
+  setTimeout(()=>{
+    if(img){ ph.innerHTML=`<img src="${img}" style="width:100%;height:100%;object-fit:contain">`; }
+    else { ph.textContent=p.demo?p.e:emojiCat(p.cat); }
+    document.getElementById('hcT').textContent=(p.titulo||'').slice(0,40); document.getElementById('hcP').textContent=fmt(p.precio); card.style.opacity=1; card.style.transform='translateY(-50%) scale(1)';
+  },220);
   document.querySelectorAll('.hero-floats span').forEach(s=>{ s.style.opacity=0; setTimeout(()=>{ s.textContent=floatPool[Math.floor(Math.random()*floatPool.length)]; s.style.opacity=''; },300); });
   [...dots.children].forEach((d,i)=>d.classList.toggle('on',i===hi));
 }
 function irHeroDot(i){ hi=i; pintarHero(); }
 setHeroDots(); setInterval(()=>{ hi=(hi+1)%heroSet.length; pintarHero(); },3800);
+function actualizarHero(){
+  const reales=(TODOS||[]).filter(p=>!p.demo && (p.stock>0));   /* solo reales con stock */
+  let pool = reales.length ? reales.slice() : DEMO.slice();
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }  /* aleatorio */
+  heroSet = pool.slice(0,8);
+  if(!heroSet.length) heroSet=DEMO.slice(0,5);
+  hi=0; setHeroDots(); pintarHero();
+}
 
 /* ===== Asistente ===== */
 function toggleAsis(){
