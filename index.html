@@ -207,7 +207,11 @@
   .chat-in button{background:var(--rojo);color:#fff;width:42px;border-radius:50%;font-size:16px}
 
   /* Paneles vendedor/admin (pantalla completa) */
-  .panel{position:fixed;inset:0;background:var(--bg);z-index:105;overflow-y:auto;display:none}
+  .banner-alerta{position:fixed;top:0;left:0;right:0;background:#FFF3CD;color:#7a5d00;border-bottom:1px solid #ffe69c;padding:11px 16px;font-size:13px;font-weight:600;text-align:center;z-index:300;display:none}
+  .banner-alerta.on{display:block}
+  .banner-alerta button{margin-left:12px;background:#7a5d00;color:#fff;border-radius:6px;padding:4px 11px;font-size:12px;font-weight:700}
+
+  .panel{position:fixed;top:var(--headh,112px);left:0;right:0;bottom:0;background:var(--bg);z-index:50;overflow-y:auto;display:none}
   .panel.on{display:block}
   .panel-top{background:#fff;border-bottom:1px solid var(--linea);padding:14px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:2}
   .panel-top h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:19px}
@@ -286,6 +290,16 @@
   .subtile:hover{transform:translateY(-3px);box-shadow:var(--s2)}
   .subtile span{font-size:14px;text-shadow:0 1px 5px rgba(0,0,0,.25);position:relative;z-index:1}
   .subtile .se{position:absolute;right:6px;top:4px;font-size:40px;opacity:.3}
+  .cat-promo{display:flex;gap:22px;flex-wrap:wrap;border-radius:14px;padding:14px 20px;margin:18px 0;font-weight:700;font-size:13px;justify-content:center}
+  .subcircles{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px}
+  .subcircle{text-align:center;cursor:pointer;padding:8px 4px;border-radius:14px;transition:background .12s}
+  .subcircle:hover{background:#fafafb}
+  .subcircle .circ{width:80px;height:80px;border-radius:50%;margin:0 auto 9px;display:grid;place-items:center;font-size:38px;box-shadow:var(--s1);transition:transform .12s}
+  .subcircle:hover .circ{transform:translateY(-3px);box-shadow:var(--s2)}
+  .subcircle span{font-size:12.5px;font-weight:600;display:block;line-height:1.3}
+  .busca-drop a.sug{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:13.5px;cursor:pointer;color:var(--ink)}
+  .busca-drop a.sug:hover{background:var(--tint);color:var(--rojo)}
+  .busca-drop a.sug b{font-weight:700}
   /* Banda de confianza estilo ML */
   .confianza{background:#fff;border-top:1px solid var(--linea);margin-top:24px;padding:32px 0}
   .confianza .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1000px;margin:0 auto;text-align:center;padding:0 18px}
@@ -306,6 +320,7 @@
 </style>
 </head>
 <body>
+<div class="banner-alerta" id="bannerAlerta"></div>
 
 <header>
   <div class="topline"></div>
@@ -313,7 +328,7 @@
     <a class="logo" onclick="irHome()"><span class="bolsa">🛒</span>Compra<b>Ya</b></a>
     <div class="busca-wrap">
       <div class="buscador">
-        <input id="busca" type="text" placeholder="Buscar productos, marcas y más..." aria-label="Buscar" autocomplete="off" onfocus="abrirBuscaDrop()" oninput="abrirBuscaDrop()">
+        <input id="busca" type="text" placeholder="Buscar productos, marcas y más..." aria-label="Buscar" autocomplete="off" onfocus="actualizaBusca()" oninput="actualizaBusca()">
         <button onclick="buscar()" aria-label="Buscar">🔍</button>
       </div>
       <div class="busca-drop" id="buscaDrop"></div>
@@ -538,24 +553,41 @@ function pintarGrilla(lista){ HOMELIST=lista; pintarGrillaEn('grilla',lista); }
 function pintarGrillaEn(id,lista){
   LISTA=lista;
   const cont=document.getElementById(id); if(!cont) return;
-  cont.innerHTML=lista.length?lista.map(cardProducto).join(''):'<div class="vacio" style="grid-column:1/-1"><div class="e">📦</div>No hay productos en esta sección todavía.</div>';
+  cont.innerHTML=lista.length?lista.map(cardProducto).join(''):'<div class="vacio" style="grid-column:1/-1;background:#fff;border-radius:18px;padding:48px 24px;box-shadow:var(--s1)"><div class="e">🛍️</div><b style="font-size:16px">Aún no hay productos aquí</b><p style="margin-top:6px;max-width:340px;margin-left:auto;margin-right:auto">Muy pronto se llena de cosas buenas. Si eres vendedor, ¡sé el primero en publicar desde tu panel!</p></div>';
   marcarFavs();
 }
+/* ===== Navegación con los botones atrás/adelante del navegador ===== */
+let popInProgress=false;
+function pushHist(){ try{ history.pushState({cy:1},''); }catch(e){} }
+function volverHist(real){ if(popInProgress) real(); else history.back(); }
+window.addEventListener('popstate',()=>{ popInProgress=true; cerrarTope(); popInProgress=false; });
+function cerrarTope(){
+  if(document.getElementById('ovDetalle').classList.contains('abierto')) return cerrarDetalleReal();
+  if(document.getElementById('overlay').classList.contains('abierto')) return cerrarLoginReal();
+  if(document.getElementById('chatDrawer').classList.contains('on')) return cerrarChatReal();
+  if(document.getElementById('drawer').classList.contains('on')) return cerrarDrawerReal();
+  if(document.getElementById('vista').classList.contains('on')) return cerrarVistaReal();
+  if(document.getElementById('panelVendedor').classList.contains('on')) return cerrarPanelReal('panelVendedor');
+  if(document.getElementById('panelAdmin').classList.contains('on')) return cerrarPanelReal('panelAdmin');
+}
 /* Vista a pantalla completa reutilizable */
-function abrirVista(titulo,html){ document.getElementById('vistaTitulo').textContent=titulo; document.getElementById('vistaBody').innerHTML=html; document.getElementById('vista').classList.add('on'); window.scrollTo(0,0); }
-function cerrarVista(){ document.getElementById('vista').classList.remove('on'); pintarGrilla(HOMELIST); }
+function abrirVista(titulo,html){ document.getElementById('vistaTitulo').textContent=titulo; document.getElementById('vistaBody').innerHTML=html; document.getElementById('vista').classList.add('on'); window.scrollTo(0,0); pushHist(); }
+function cerrarVista(){ volverHist(cerrarVistaReal); }
+function cerrarVistaReal(){ document.getElementById('vista').classList.remove('on'); pintarGrilla(HOMELIST); }
 /* Categoría temática (pantalla propia) */
 function verCategoria(nombre){
-  cerrarMegacat();
+  cerrarMegacat(); cerrarBuscaDrop();
   const c=CATS.find(x=>x.n===nombre)||{e:'📦',t:'#F5454A',c:'#FFF1F1',n:nombre};
   const subs=SUBCATS[nombre]||[];
   const lista=TODOS.filter(p=>(p.cat||'')===nombre);
   const grads=['#6C5CE7,#8B7BFF','#0FB5A4,#3DD9C6','#FF9F1C,#FFB84D','#F5454A,#FF8A3D','#E84393,#FF7AB6','#3498db,#5DADE2'];
   const emo={'Celulares':'📱','Laptops':'💻','Audífonos':'🎧','Smartwatches':'⌚','Accesorios':'🔌','Consolas':'🎮','Teclados':'⌨️','Mouse':'🖱️','Controles':'🎮','Sillas gamer':'🪑','Zapatillas':'👟','Casacas':'🧥','Polos':'👕','Relojes':'⌚','Mochilas':'🎒','Cocina':'🍳','Muebles':'🛋️','Decoración':'🖼️','Iluminación':'💡','Organización':'📦','Maquillaje':'💄','Skincare':'🧴','Perfumes':'🌸','Cabello':'💇','Ropa deportiva':'🏃','Pesas':'🏋️','Bicicletas':'🚲','Suplementos':'🥤','Bloques':'🧱','Peluches':'🧸','Juegos de mesa':'🎲','Didácticos':'🔤','Alimento':'🦴','Camas':'🛏️','Juguetes':'🎾','Higiene':'🧼'};
-  let html=`<div class="cat-hero" style="background:linear-gradient(120deg,${c.t},${c.t}bb)"><span class="be">${c.e}</span><div><h2>${nombre}</h2><p>Lo mejor de ${nombre} al mejor precio, con la calidad de CompraYa 🔴</p></div><span class="bgemoji">${c.e}</span></div>`;
+  let html=`<div class="cat-hero" style="background:linear-gradient(120deg,${c.t},${c.t}bb)"><span class="be">${c.e}</span><div><h2>${nombre}</h2><p>Lo mejor de ${nombre} al mejor precio, con la calidad de CompraYa 🔴</p></div><span class="bgemoji">${c.e}</span></div>
+    <div class="cat-promo" style="background:${c.c};color:${c.t}"><span>💳 Hasta 6 cuotas sin interés</span><span>🛡️ Compra protegida</span><span>🏷️ Ofertas en ${nombre}</span></div>`;
   if(subs.length){
-    html+=`<h3 class="cat-h3">Explora en ${nombre}</h3><div class="subtiles">`+
-      subs.map((s,i)=>`<div class="subtile" style="background:linear-gradient(135deg,${grads[i%grads.length]})" onclick="buscaSugerida('${s}')"><span class="se">${emo[s]||c.e}</span><span>${s}</span></div>`).join('')+`</div>`;
+    const soft=['#EEF0FF','#E7FBF7','#FFF4E5','#FFF1F1','#FFEFF6','#EAF6FF'];
+    html+=`<h3 class="cat-h3">Explora en ${nombre}</h3><div class="subcircles">`+
+      subs.map((s,i)=>`<div class="subcircle" onclick="buscaSugerida('${s}')"><div class="circ" style="background:${soft[i%soft.length]}">${emo[s]||c.e}</div><span>${s}</span></div>`).join('')+`</div>`;
   }
   html+=`<h3 class="cat-h3">⭐ Productos de ${nombre}</h3><div class="grilla" id="vistaGrilla"></div>`;
   abrirVista(c.e+' '+nombre,html);
@@ -575,6 +607,7 @@ async function cargarProductos(){
   }catch(e){ console.warn('Productos:',e.message); TODOS=DEMO; }
   pintarGrilla(TODOS);
   pintarVistosHome();
+  buildSugerencias();
 }
 
 /* ===== Categorías ===== */
@@ -621,11 +654,12 @@ async function verProducto(idx){
         <button class="btn sec" style="margin-top:8px" onclick="hablarVendedor(${idx})">💬 Hablar con el vendedor</button>
       </div>
     </div>`;
-  document.getElementById('ovDetalle').classList.add('abierto');
+  document.getElementById('ovDetalle').classList.add('abierto'); pushHist();
 }
 let CANT=1;
 function cant(d){ CANT=Math.max(1,CANT+d); document.getElementById('cantN').textContent=CANT; }
-function cerrarDetalle(){ document.getElementById('ovDetalle').classList.remove('abierto'); CANT=1; }
+function cerrarDetalle(){ volverHist(cerrarDetalleReal); }
+function cerrarDetalleReal(){ document.getElementById('ovDetalle').classList.remove('abierto'); CANT=1; }
 document.getElementById('ovDetalle').addEventListener('click',e=>{if(e.target.id==='ovDetalle')cerrarDetalle();});
 
 /* ===== Vistos ===== */
@@ -765,13 +799,15 @@ async function hablarVendedor(idx){
   }catch(e){ toast('No se pudo abrir el chat'); console.warn(e.message); }
 }
 async function abrirChat(convId,titulo){
+  cerrarAsis();
   CONV_ACTIVA=convId;
   document.getElementById('chatTitle').textContent='💬 '+(titulo||'Chat');
   document.getElementById('backdrop').classList.add('on');
-  document.getElementById('chatDrawer').classList.add('on');
+  document.getElementById('chatDrawer').classList.add('on'); pushHist();
   await pintarMsgs();
 }
-function cerrarChat(){ document.getElementById('chatDrawer').classList.remove('on'); document.getElementById('backdrop').classList.remove('on'); CONV_ACTIVA=null; }
+function cerrarChat(){ volverHist(cerrarChatReal); }
+function cerrarChatReal(){ document.getElementById('chatDrawer').classList.remove('on'); document.getElementById('backdrop').classList.remove('on'); CONV_ACTIVA=null; }
 async function pintarMsgs(){
   const cont=document.getElementById('chatMsgs');
   try{
@@ -789,17 +825,19 @@ async function enviarMsg(){
 }
 
 /* ===== Drawer genérico ===== */
-function abrirDrawer(titulo,html){ document.getElementById('drawerTitle').textContent=titulo; document.getElementById('drawerBody').innerHTML=html; document.getElementById('drawerFoot').style.display='none'; document.getElementById('backdrop').classList.add('on'); document.getElementById('drawer').classList.add('on'); }
+function abrirDrawer(titulo,html){ cerrarAsis(); document.getElementById('drawerTitle').textContent=titulo; document.getElementById('drawerBody').innerHTML=html; document.getElementById('drawerFoot').style.display='none'; document.getElementById('backdrop').classList.add('on'); document.getElementById('drawer').classList.add('on'); pushHist(); }
 function setDrawerBody(html){ document.getElementById('drawerBody').innerHTML=html; }
-function cerrarDrawer(){ document.getElementById('drawer').classList.remove('on'); document.getElementById('backdrop').classList.remove('on'); }
+function cerrarDrawer(){ volverHist(cerrarDrawerReal); }
+function cerrarDrawerReal(){ document.getElementById('drawer').classList.remove('on'); document.getElementById('backdrop').classList.remove('on'); }
 
 /* ===== PANEL VENDEDOR ===== */
 function abrirVender(){
   if(!MIID){ abrirLogin(); return; }
   if(vistaRol!=='vendedor'&&vistaRol!=='admin'){ toast('Solo los vendedores pueden subir productos. Pide tu acceso a la administración 🏪'); return; }
-  document.getElementById('panelVendedor').classList.add('on'); tabVend('prod');
+  document.getElementById('panelVendedor').classList.add('on'); pushHist(); tabVend('prod');
 }
-function cerrarPanel(id){ document.getElementById(id).classList.remove('on'); }
+function cerrarPanel(id){ volverHist(()=>cerrarPanelReal(id)); }
+function cerrarPanelReal(id){ document.getElementById(id).classList.remove('on'); }
 function tabVend(t){
   ['Prod','Venta','Chat'].forEach(x=>document.getElementById('tb'+x).classList.remove('on'));
   document.getElementById('tb'+(t==='prod'?'Prod':t==='venta'?'Venta':'Chat')).classList.add('on');
@@ -873,7 +911,7 @@ async function vendChats(){
 
 /* ===== PANEL ADMIN ===== */
 function abrirAdmin(){
-  if(usuarioActual&&usuarioActual.rol==='admin'&&vistaRol==='admin'){ document.getElementById('panelAdmin').classList.add('on'); tabAdmin('aud'); }
+  if(usuarioActual&&usuarioActual.rol==='admin'&&vistaRol==='admin'){ document.getElementById('panelAdmin').classList.add('on'); pushHist(); tabAdmin('aud'); }
   else toast('Solo administración');
 }
 function tabAdmin(t){
@@ -910,12 +948,14 @@ async function adminConv(){
 
 /* ===== Auth ===== */
 let registro=false;
-function abrirLogin(){ document.getElementById('overlay').classList.add('abierto'); }
-function cerrarLogin(){ document.getElementById('overlay').classList.remove('abierto'); modoLogin(); document.getElementById('mMsg').textContent=''; }
+function abrirLogin(){ document.getElementById('overlay').classList.add('abierto'); pushHist(); }
+function cerrarLogin(){ volverHist(cerrarLoginReal); }
+function cerrarLoginReal(){ document.getElementById('overlay').classList.remove('abierto'); modoLogin(); document.getElementById('mMsg').textContent=''; }
 function modoRegistro(){ registro=true; mTitulo.textContent='Crea tu cuenta'; mSub.textContent='Es gratis y rápido'; campoNombre.style.display='block'; mBtn.textContent='Crear cuenta'; mNota.style.display='block'; mAlt.innerHTML='¿Ya tienes cuenta? <b onclick="modoLogin()">Ingresa</b>'; }
 function modoLogin(){ registro=false; mTitulo.textContent='Ingresa a tu cuenta'; mSub.textContent='Compra y vende fácil y seguro'; campoNombre.style.display='none'; mBtn.textContent='Ingresar'; mNota.style.display='none'; mAlt.innerHTML='¿No tienes cuenta? <b onclick="modoRegistro()">Créate una</b>'; }
 document.getElementById('overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') cerrarLogin(); });
-function traducirError(m){ if(/not confirmed/i.test(m))return'Tu correo no está confirmado. Desactiva "Confirm email" en Supabase (Authentication → Sign In/Providers → Email).'; if(/Invalid login/i.test(m))return'Correo o contraseña incorrectos.'; if(/already registered/i.test(m))return'Ese correo ya tiene cuenta. Mejor ingresa.'; if(/at least 6/i.test(m))return'La contraseña debe tener mínimo 6 caracteres.'; if(/valid email/i.test(m))return'Escribe un correo válido.'; return m; }
+function traducirError(m){ if(/timeout|tard/i.test(m))return'La conexión tardó demasiado. Revisa tu internet, o si tienes VPN pruébalo sin VPN. También revisa que tu proyecto de Supabase no esté pausado.'; if(/not confirmed/i.test(m))return'Tu correo no está confirmado. Desactiva "Confirm email" en Supabase y vuelve a registrarte, o confirma tu cuenta en Authentication → Users.'; if(/Invalid login/i.test(m))return'Correo o contraseña incorrectos.'; if(/already registered/i.test(m))return'Ese correo ya tiene cuenta. Mejor ingresa.'; if(/at least 6/i.test(m))return'La contraseña debe tener mínimo 6 caracteres.'; if(/valid email/i.test(m))return'Escribe un correo válido.'; return m; }
+function conTimeout(p,ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]); }
 async function hacerAuth(){
   const email=inEmail.value.trim(), pass=inPass.value, nombre=inNombre.value.trim(), msg=document.getElementById('mMsg');
   msg.style.color='#c00'; msg.textContent='';
@@ -924,14 +964,15 @@ async function hacerAuth(){
   try{
     if(registro){
       if(!nombre){ msg.textContent='Pon tu nombre.'; return; }
-      const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{nombre}}});
+      const {data,error}=await conTimeout(sb.auth.signUp({email,password:pass,options:{data:{nombre}}}),15000);
       if(error) throw error;
-      if(data.session) cerrarLogin(); else { msg.style.color='#0a8a3a'; msg.textContent='✅ Cuenta creada. Si pide confirmar correo, revísalo.'; }
-    } else { const {error}=await sb.auth.signInWithPassword({email,password:pass}); if(error) throw error; cerrarLogin(); }
-  }catch(e){ msg.style.color='#c00'; msg.textContent=traducirError(e.message||'Error'); }
+      if(data.session) cerrarLogin(); else { msg.style.color='#0a8a3a'; msg.textContent='✅ Cuenta creada. Si pide confirmar correo, revísalo o desactiva "Confirm email".'; }
+    } else { const {error}=await conTimeout(sb.auth.signInWithPassword({email,password:pass}),15000); if(error) throw error; cerrarLogin(); }
+  }catch(e){ const em=e.message||'Error'; msg.style.color='#c00'; msg.textContent=traducirError(em); if(/timeout|fetch|network|tard|failed/i.test(em)) mostrarBanner('⚠️ Falló la conexión al ingresar: '+em+'. Apaga la VPN y recarga.'); }
   finally{ btn.disabled=false; btn.textContent=o; }
 }
 document.getElementById('mBtn').addEventListener('click',hacerAuth);
+document.getElementById('inPass').addEventListener('keydown',e=>{ if(e.key==='Enter') hacerAuth(); });
 async function entrarGoogle(){ try{ const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href}}); if(error)throw error; }catch(e){ alert('El botón de Google ya está listo, pero falta activarlo en Supabase (Authentication → Providers → Google). Cuando quieras te guío. 😉'); } }
 
 /* ===== Sesión ===== */
@@ -1000,7 +1041,13 @@ function irHeroDot(i){ hi=i; pintarHero(); }
 setHeroDots(); setInterval(()=>{ hi=(hi+1)%heroSet.length; pintarHero(); },3800);
 
 /* ===== Asistente ===== */
-function toggleAsis(){ document.getElementById('asis').classList.toggle('abierto'); }
+function toggleAsis(){
+  const a=document.getElementById('asis');
+  const vaAbrir=!a.classList.contains('abierto');
+  if(vaAbrir){ cerrarDrawerReal(); cerrarChatReal(); }   /* cierro cajones para que no se superpongan */
+  a.classList.toggle('abierto');
+}
+function cerrarAsis(){ document.getElementById('asis').classList.remove('abierto'); }
 const RESP={comprar:'Para comprar: entra a un producto, elige cantidad y dale a "Comprar ahora" o "Agregar al carrito" 🛒. Tu compra queda en Mis compras.',vender:'Las cuentas de vendedor las crea la administración 🏪. Si eres del equipo, entra a "Vender" y publica tus productos.',pago:'Aceptaremos tarjetas y hasta 6 cuotas sin interés 💳 (se activa con la pasarela de pago).',envio:'El envío está como "Próximamente" 🚚. Pronto lo activamos.',devolucion:'Compra protegida: puedes devolver tu compra hasta 30 días 🛡️.',rastrear:'Entra a "Mis compras" 📦 y verás el estado de cada pedido.',que:'CompraYa es tu tienda para comprar y vender, estilo Mercado Libre pero más cercano 🔴.'};
 const PREG={comprar:'¿Cómo compro?',vender:'¿Cómo vendo?',pago:'Pagos',envio:'Envíos',devolucion:'Devoluciones',rastrear:'Rastrear pedido',que:'¿Qué es CompraYa?'};
 function pushB(t,c=''){ const b=document.getElementById('asisBody'); b.insertAdjacentHTML('beforeend',`<div class="burbuja ${c}">${t}</div>`); b.scrollTop=b.scrollHeight; }
@@ -1020,21 +1067,45 @@ const SUBCATS={
   'Juguetería':['Bloques','Peluches','Juegos de mesa','Didácticos'],
   'Mascotas':['Alimento','Camas','Juguetes','Higiene']
 };
-/* Buscador desplegable */
-function buildBuscaDrop(){
+/* Buscador con autocompletado tipo Google */
+let SUGS=[];
+function buildSugerencias(){
+  const s=new Set();
+  (TODOS||[]).forEach(p=>{ if(p.titulo) s.add(p.titulo); });
+  Object.values(SUBCATS).forEach(arr=>arr.forEach(x=>s.add(x)));
+  CATS.forEach(c=>s.add(c.n));
+  ['audífonos','teclado gamer','zapatillas','smartwatch','ollas','mouse','laptop','perfume'].forEach(x=>s.add(x));
+  SUGS=[...s];
+}
+function buscaDefault(){
   const pop=['audífonos','teclado gamer','zapatillas','smartwatch','ollas','mouse'];
-  document.getElementById('buscaDrop').innerHTML=
-   `<h5>Búsquedas populares</h5><div class="busca-chips">${pop.map(s=>`<span onclick="buscaSugerida('${s}')">${s}</span>`).join('')}</div>
+  return `<h5>Búsquedas populares</h5><div class="busca-chips">${pop.map(s=>`<span onclick="buscaSugerida('${s}')">${s}</span>`).join('')}</div>
     <h5>Explora por categoría</h5><div class="busca-cats">${CATS.map(c=>`<a onclick="buscaCat('${c.n}')"><span>${c.e}</span> ${c.n}</a>`).join('')}</div>`;
 }
-function abrirBuscaDrop(){ document.getElementById('buscaDrop').classList.add('on'); cerrarMegacat(); }
+function actualizaBusca(){
+  const q=document.getElementById('busca').value.trim().toLowerCase();
+  const d=document.getElementById('buscaDrop');
+  cerrarMegacat();
+  if(!q){ d.innerHTML=buscaDefault(); d.classList.add('on'); return; }
+  const m=SUGS.filter(s=>s.toLowerCase().includes(q)).slice(0,8);
+  let h='';
+  if(m.length){
+    h='<h5>Sugerencias</h5>'+m.map(s=>{
+      const i=s.toLowerCase().indexOf(q);
+      const hl=i>=0?s.slice(0,i)+'<b>'+s.slice(i,i+q.length)+'</b>'+s.slice(i+q.length):s;
+      return `<a class="sug" onclick="buscaSugerida(${JSON.stringify(s).replace(/"/g,'&quot;')})">🔍 ${hl}</a>`;
+    }).join('');
+  } else h='<div style="padding:12px;color:#999;font-size:13px">Sin sugerencias para "'+q+'"</div>';
+  d.innerHTML=h; d.classList.add('on');
+}
+function abrirBuscaDrop(){ document.getElementById('buscaDrop').innerHTML=buscaDefault(); document.getElementById('buscaDrop').classList.add('on'); cerrarMegacat(); }
 function cerrarBuscaDrop(){ document.getElementById('buscaDrop').classList.remove('on'); }
-function buscaSugerida(s){ document.getElementById('busca').value=s; cerrarBuscaDrop(); buscar(); }
-function buscaCat(n){ cerrarBuscaDrop(); filtrarCatNombre(n); }
-/* Mega menú categorías */
+function buscaSugerida(s){ document.getElementById('busca').value=s; cerrarBuscaDrop(); cerrarMegacat(); document.getElementById('vista').classList.remove('on'); buscar(); }
+function buscaCat(n){ cerrarBuscaDrop(); verCategoria(n); }
+/* Mega menú: el título lleva a su página temática; la subcategoría filtra abajo */
 function buildMegacat(){
   document.getElementById('megacat').innerHTML='<div class="inner">'+CATS.map(c=>
-    `<div class="col"><h5 onclick="filtrarCatNombre('${c.n}')">${c.e} ${c.n}</h5>${(SUBCATS[c.n]||[]).map(s=>`<a onclick="buscaSugerida('${s}')">${s}</a>`).join('')}</div>`).join('')+'</div>';
+    `<div class="col"><h5 onclick="verCategoria('${c.n}')">${c.e} ${c.n}</h5>${(SUBCATS[c.n]||[]).map(s=>`<a onclick="buscaSugerida('${s}')">${s}</a>`).join('')}</div>`).join('')+'</div>';
 }
 function toggleMegacat(ev){ if(ev)ev.stopPropagation(); const m=document.getElementById('megacat'); if(!m.innerHTML)buildMegacat(); m.classList.toggle('on'); cerrarBuscaDrop(); }
 function cerrarMegacat(){ document.getElementById('megacat').classList.remove('on'); }
@@ -1055,10 +1126,17 @@ document.addEventListener('click',e=>{
   if(!e.target.closest('.busca-wrap')) cerrarBuscaDrop();
   if(!e.target.closest('#megacat') && !e.target.closest('.menu')) cerrarMegacat();
 });
-buildBuscaDrop();
+function ajustarHead(){ const h=document.querySelector('header'); if(h) document.documentElement.style.setProperty('--headh',h.offsetHeight+'px'); }
+ajustarHead(); window.addEventListener('resize',ajustarHead); setTimeout(ajustarHead,400);
+function mostrarBanner(msg){ const b=document.getElementById('bannerAlerta'); b.innerHTML=msg+' <button onclick="document.getElementById(\'bannerAlerta\').classList.remove(\'on\')">Cerrar</button>'; b.classList.add('on'); }
+async function testConexion(){
+  try{ const r=await conTimeout(sb.from('categorias').select('id').limit(1),9000); if(r.error) throw new Error(r.error.message); console.log('✅ Conexión con Supabase OK'); }
+  catch(e){ mostrarBanner('⚠️ No hay conexión con la base de datos ('+(e.message||'error')+'). Si usas VPN, APÁGALA y recarga la página. Eso suele ser lo que bloquea el login.'); }
+}
 pintarBadges();
 cargarProductos();
 refrescarSesion();
+testConexion();
 </script>
 </body>
 </html>
