@@ -27,8 +27,10 @@
   header{background:#fff;position:sticky;top:0;z-index:60;box-shadow:var(--s1);border-bottom:1px solid var(--linea)}
   .topline{height:4px;background:linear-gradient(90deg,var(--rojo),var(--naranja))}
   .barra1{display:flex;align-items:center;gap:20px;padding:13px 18px;max-width:1240px;margin:0 auto}
-  .logo{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;display:flex;align-items:center;gap:9px;white-space:nowrap;letter-spacing:-.6px;color:var(--ink)}
-  .logo .bolsa{background:linear-gradient(135deg,var(--rojo),var(--naranja));color:#fff;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:19px;box-shadow:0 4px 12px rgba(245,69,74,.35)}
+  .logo{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:29px;display:flex;align-items:center;gap:11px;white-space:nowrap;letter-spacing:-.7px;color:var(--ink);cursor:pointer;transition:transform .18s}
+  .logo:hover{transform:scale(1.04)}.logo:active{transform:scale(.97)}
+  .logo .bolsa{background:linear-gradient(135deg,var(--rojo),var(--naranja));color:#fff;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:25px;box-shadow:0 5px 16px rgba(245,69,74,.4);transition:transform .25s}
+  .logo:hover .bolsa{transform:rotate(-8deg) scale(1.05)}
   .logo b{color:var(--rojo);font-weight:800}
   .buscador{flex:1;display:flex;background:#fff;border:2px solid var(--ink);border-radius:30px;overflow:hidden;max-width:600px;transition:border-color .15s}
   .buscador:focus-within{border-color:var(--rojo)}
@@ -243,6 +245,10 @@
   .banner-alerta button{margin-left:12px;background:#7a5d00;color:#fff;border-radius:6px;padding:4px 11px;font-size:12px;font-weight:700}
 
   .panel{position:fixed;top:var(--headh,112px);left:0;right:0;bottom:0;background:var(--bg);z-index:50;overflow-y:auto;display:none}
+  .panel.on{display:block;animation:panelIn .26s ease}
+  @keyframes panelIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .panel .seccion,.panel .cat-hero,.panel .stat,.panel .item{animation:fadeUp .35s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   .panel.on{display:block}
   .panel-top{background:#fff;border-bottom:1px solid var(--linea);padding:14px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:2}
   .panel-top h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:19px}
@@ -260,6 +266,14 @@
   table.tabla tr:last-child td{border-bottom:none}
   .mini-btn{font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:7px;background:var(--tint);color:var(--rojo);margin-right:5px}
   .mini-btn.gris{background:#eee;color:#555}.mini-btn.verde{background:#e6faf2;color:var(--verde)}
+  .filtros-rol{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .filtro-rol{background:#fff;border:1.5px solid #e2e2e8;border-radius:999px;padding:8px 15px;font-size:13px;font-weight:600;color:#555;cursor:pointer;transition:.15s}
+  .filtro-rol:hover{border-color:var(--rojo)}
+  .filtro-rol.on{background:var(--rojo);color:#fff;border-color:var(--rojo)}
+  .filtro-rol b{margin-left:4px;opacity:.85}
+  .avatar-edit{width:78px;height:78px;border-radius:50%;background:#f1f1f4;display:grid;place-items:center;font-size:34px;position:relative;cursor:pointer;overflow:visible;flex-shrink:0;border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.1)}
+  .avatar-edit img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+  .avatar-edit .cam{position:absolute;right:-2px;bottom:-2px;background:var(--rojo);color:#fff;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;border:2px solid #fff}
 
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:13px 22px;border-radius:30px;font-size:13.5px;font-weight:600;box-shadow:var(--s3);z-index:200;opacity:0;transition:all .3s;pointer-events:none}
   .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -383,7 +397,7 @@
     <div class="envio">📍 Enviar a — <b>&nbsp;Próximamente</b> <span class="proximamente">PRÓXIMAMENTE</span></div>
     <nav class="menu">
       <a class="destacar" onclick="toggleMegacat(event)">☰ Categorías</a>
-      <a onclick="verOfertas()">Ofertas</a><a onclick="verCupones()">Cupones</a><a onclick="filtrarCatNombre('Moda')">Moda</a>
+      <a onclick="verOfertas()">Ofertas</a><a onclick="verCupones()">Cupones</a><a onclick="verCategoria('Moda')">Moda</a>
       <a onclick="abrirVender()">Vender</a><a onclick="toggleAsis()">Ayuda</a>
     </nav>
   </div>
@@ -607,7 +621,7 @@ function cerrarVista(){ volverHist(cerrarVistaReal); }
 function cerrarVistaReal(){ document.getElementById('vista').classList.remove('on'); pintarGrilla(HOMELIST); }
 /* Categoría temática (pantalla propia) */
 function verCategoria(nombre){
-  cerrarMegacat(); cerrarBuscaDrop();
+  cerrarPanelesFull(); cerrarBuscaDrop();
   const c=CATS.find(x=>x.n===nombre)||{e:'📦',t:'#F5454A',c:'#FFF1F1',n:nombre};
   const subs=SUBCATS[nombre]||[];
   const lista=TODOS.filter(p=>(p.cat||'')===nombre);
@@ -647,6 +661,7 @@ let catActiva=null;
 document.getElementById('cats').innerHTML=CATS.map((c,i)=>
   `<div class="cat" onclick="verCategoria('${c.n}')"><div class="e" style="background:${c.c};color:${c.t}">${c.e}</div><div class="n">${c.n}</div></div>`).join('');
 function filtrarCatNombre(nombre){
+  cerrarPanelesFull();
   document.getElementById('tituloGrilla').textContent='🗂️ '+nombre;
   pintarGrilla(TODOS.filter(p=>(p.cat||'')===nombre || categoriaNombre(p)===nombre));
   window.scrollTo({top:document.getElementById('tituloGrilla').offsetTop-90,behavior:'smooth'});
@@ -655,6 +670,7 @@ function categoriaNombre(p){ if(p.cat) return p.cat; return ''; }
 function filtrarBaratos(){ document.getElementById('tituloGrilla').textContent='💸 Menos de S/100'; pintarGrilla(TODOS.filter(p=>p.precio<100)); }
 function irHome(){ cerrarTodoFull(); document.getElementById('tituloGrilla').textContent='⭐ Productos destacados'; pintarGrilla(TODOS); window.scrollTo({top:0,behavior:'smooth'}); }
 function cerrarTodoFull(){ ['vista','panelVendedor','panelAdmin'].forEach(id=>document.getElementById(id).classList.remove('on')); document.getElementById('ovDetalle').classList.remove('abierto'); cerrarDrawerReal(); cerrarChatReal(); cerrarAsis(); cerrarMegacat(); cerrarBuscaDrop(); }
+function cerrarPanelesFull(){ ['vista','panelVendedor','panelAdmin'].forEach(id=>document.getElementById(id).classList.remove('on')); document.getElementById('ovDetalle').classList.remove('abierto'); cerrarMegacat(); }
 function buscar(){
   cerrarTodoFull();
   const q=document.getElementById('busca').value.trim().toLowerCase();
@@ -794,7 +810,7 @@ async function toggleFav(idx,btn){
 }
 async function verFavoritos(){
   if(!MIID){ abrirLogin(); return; }
-  abrirVista('❤️ Favoritos','<div class="seccion"><div class="vacio">Cargando...</div></div>');
+  cerrarPanelesFull(); abrirVista('❤️ Favoritos','<div class="seccion"><div class="vacio">Cargando...</div></div>');
   try{
     const {data}=await sb.from('favoritos').select('producto_id,productos(id,titulo,precio,producto_imagenes(url))').eq('usuario_id',MIID);
     const items=(data||[]).map(f=>f.productos).filter(Boolean);
@@ -844,7 +860,7 @@ async function comprarAhora(idx){ addCartIdx(idx); await checkout(); cerrarDetal
 /* ===== Mis compras ===== */
 async function verCompras(){
   if(!MIID){ abrirLogin(); return; }
-  abrirVista('📦 Mis compras','<div class="seccion"><div class="vacio">Cargando...</div></div>');
+  cerrarPanelesFull(); abrirVista('📦 Mis compras','<div class="seccion"><div class="vacio">Cargando...</div></div>');
   try{
     const {data}=await sb.from('pedidos').select('id,total,estado,fecha,pedido_detalle(cantidad,precio_unit,productos(titulo,producto_imagenes(url)))').eq('comprador_id',MIID).order('fecha',{ascending:false});
     const body=document.getElementById('vistaBody');
@@ -891,24 +907,46 @@ async function hablarVendedor(idx){
     cerrarDetalle(); abrirChat(conv.id,p.titulo);
   }catch(e){ toast('No se pudo abrir el chat'); console.warn(e.message); }
 }
+let chatPoll=null, ultMsgId=null, audioCtx=null;
+function sonarTimbre(){
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    let t=audioCtx.currentTime;
+    [880,1175].forEach(f=>{ const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type='sine'; o.frequency.value=f; o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.25,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.28); o.start(t); o.stop(t+0.3); t+=0.16; });
+  }catch(e){}
+}
 async function abrirChat(convId,titulo){
   cerrarAsis();
-  CONV_ACTIVA=convId;
+  CONV_ACTIVA=convId; ultMsgId=null;
   document.getElementById('chatTitle').textContent='💬 '+(titulo||'Chat');
   document.getElementById('backdrop').classList.add('on');
   document.getElementById('chatDrawer').classList.add('on'); pushHist();
   await pintarMsgs();
+  if(chatPoll) clearInterval(chatPoll);
+  chatPoll=setInterval(pollChat,3500);
 }
 function cerrarChat(){ volverHist(cerrarChatReal); }
-function cerrarChatReal(){ document.getElementById('chatDrawer').classList.remove('on'); document.getElementById('backdrop').classList.remove('on'); CONV_ACTIVA=null; }
+function cerrarChatReal(){ document.getElementById('chatDrawer').classList.remove('on'); document.getElementById('backdrop').classList.remove('on'); CONV_ACTIVA=null; if(chatPoll){clearInterval(chatPoll);chatPoll=null;} }
+function renderMsgs(data){
+  const cont=document.getElementById('chatMsgs');
+  if(!data.length){ cont.innerHTML='<div class="vacio">Escribe el primer mensaje 👋</div>'; return; }
+  cont.innerHTML=data.map(m=>`<div class="b ${m.emisor_id===MIID?'mio':'otro'} ${m.oculto?'oculto':''}">${m.oculto?'(mensaje oculto por moderación)':m.texto}</div>`).join('');
+  cont.scrollTop=cont.scrollHeight;
+}
 async function pintarMsgs(){
   const cont=document.getElementById('chatMsgs');
   try{
-    const {data}=await sb.from('mensajes').select('emisor_id,texto,oculto,fecha').eq('conversacion_id',CONV_ACTIVA).order('fecha');
-    if(!data||!data.length){ cont.innerHTML='<div class="vacio">Escribe el primer mensaje 👋</div>'; return; }
-    cont.innerHTML=data.map(m=>`<div class="b ${m.emisor_id===MIID?'mio':'otro'} ${m.oculto?'oculto':''}">${m.oculto?'(mensaje oculto por moderación)':m.texto}</div>`).join('');
-    cont.scrollTop=cont.scrollHeight;
+    const {data}=await sb.from('mensajes').select('id,emisor_id,texto,oculto,fecha').eq('conversacion_id',CONV_ACTIVA).order('fecha');
+    renderMsgs(data||[]);
+    if(data&&data.length) ultMsgId=data[data.length-1].id;
   }catch(e){ cont.innerHTML='<div class="vacio">No se pudo cargar</div>'; }
+}
+async function pollChat(){
+  if(!CONV_ACTIVA) return;
+  try{
+    const {data}=await sb.from('mensajes').select('id,emisor_id,texto,oculto,fecha').eq('conversacion_id',CONV_ACTIVA).order('fecha');
+    if(data&&data.length){ const ult=data[data.length-1]; if(ult.id!==ultMsgId){ const eraOtro=ult.emisor_id!==MIID; ultMsgId=ult.id; renderMsgs(data); if(eraOtro) sonarTimbre(); } }
+  }catch(e){}
 }
 async function enviarMsg(){
   const inp=document.getElementById('chatTxt'); const t=inp.value.trim();
@@ -927,7 +965,7 @@ function cerrarDrawerReal(){ document.getElementById('drawer').classList.remove(
 function abrirVender(){
   if(!MIID){ abrirLogin(); return; }
   if(vistaRol!=='vendedor'&&vistaRol!=='admin'){ toast('Solo los vendedores pueden subir productos. Pide tu acceso a la administración 🏪'); return; }
-  document.getElementById('panelVendedor').classList.add('on'); pushHist(); tabVend('prod');
+  cerrarPanelesFull(); document.getElementById('panelVendedor').classList.add('on'); pushHist(); tabVend('prod');
 }
 function cerrarPanel(id){ volverHist(()=>cerrarPanelReal(id)); }
 function cerrarPanelReal(id){ document.getElementById(id).classList.remove('on'); }
@@ -1044,7 +1082,7 @@ async function vendChats(){
 
 /* ===== PANEL ADMIN ===== */
 function abrirAdmin(){
-  if(usuarioActual&&usuarioActual.rol==='admin'&&vistaRol==='admin'){ document.getElementById('panelAdmin').classList.add('on'); pushHist(); tabAdmin('aud'); }
+  if(usuarioActual&&usuarioActual.rol==='admin'&&vistaRol==='admin'){ cerrarPanelesFull(); document.getElementById('panelAdmin').classList.add('on'); pushHist(); tabAdmin('aud'); }
   else toast('Solo administración');
 }
 function tabAdmin(t){
@@ -1059,18 +1097,45 @@ async function adminAud(){
     b.innerHTML='<div class="seccion"><h2 style="font-size:17px;margin-bottom:14px">📋 Registro de movimientos</h2>'+((data&&data.length)?'<table class="tabla"><tr><th>Acción</th><th>Sobre</th><th>Detalle</th><th>Cuándo</th></tr>'+data.map(a=>`<tr><td><b>${a.accion}</b></td><td>${a.entidad}</td><td><small>${a.detalle?JSON.stringify(a.detalle):''}</small></td><td><small>${new Date(a.fecha).toLocaleString('es-PE')}</small></td></tr>`).join('')+'</table>':'<div class="vacio">Sin movimientos aún</div>')+'</div>';
   }catch(e){ b.innerHTML='<div class="vacio">No se pudo cargar (¿eres admin?)</div>'; }
 }
+let USUARIOS=[], filtroRol='todos';
 async function adminUsr(){
   const b=document.getElementById('adminBody');
   try{
-    const {data}=await sb.from('perfiles').select('id,nombre,email,rol,activo,creado').order('creado',{ascending:false});
-    b.innerHTML='<div class="seccion"><h2 style="font-size:17px;margin-bottom:14px">👥 Usuarios</h2><table class="tabla"><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>'+
-      (data||[]).map(u=>`<tr><td>${u.nombre||''}</td><td><small>${u.email||''}</small></td><td>${u.rol}</td><td>${u.activo?'<span style="color:#12B886">Activo</span>':'<span style="color:#D6293E">Bloqueado</span>'}</td>
-      <td>${u.rol!=='admin'?`<span class="mini-btn" onclick="hacerRol('${u.id}','${u.rol==='vendedor'?'comprador':'vendedor'}')">${u.rol==='vendedor'?'Quitar vendedor':'Hacer vendedor'}</span>`:''}
-      <span class="mini-btn ${u.activo?'gris':'verde'}" onclick="toggleActivo('${u.id}',${u.activo})">${u.activo?'Deshabilitar':'Habilitar'}</span></td></tr>`).join('')+'</table></div>';
+    let cols='id,nombre,email,rol,activo,suspendido_hasta,creado';
+    let r=await sb.from('perfiles').select(cols).order('creado',{ascending:false});
+    if(r.error){ r=await sb.from('perfiles').select('id,nombre,email,rol,activo,creado').order('creado',{ascending:false}); }
+    USUARIOS=r.data||[]; pintarUsuarios();
   }catch(e){ b.innerHTML='<div class="vacio">No se pudo cargar</div>'; }
 }
+function pintarUsuarios(){
+  const b=document.getElementById('adminBody');
+  const cont={todos:USUARIOS.length,comprador:0,vendedor:0,admin:0};
+  USUARIOS.forEach(u=>cont[u.rol]=(cont[u.rol]||0)+1);
+  const lista=filtroRol==='todos'?USUARIOS:USUARIOS.filter(u=>u.rol===filtroRol);
+  const tab=(k,l)=>`<button class="filtro-rol ${filtroRol===k?'on':''}" onclick="filtroRol='${k}';pintarUsuarios()">${l} <b>${cont[k]||0}</b></button>`;
+  const estado=u=>{
+    if(!u.activo) return '<span style="color:#D6293E">Bloqueado</span>';
+    if(u.suspendido_hasta && new Date(u.suspendido_hasta)>new Date()) return '<span style="color:#FF9F1C">Suspendido hasta '+new Date(u.suspendido_hasta).toLocaleDateString('es-PE')+'</span>';
+    return '<span style="color:#12B886">Activo</span>';
+  };
+  b.innerHTML=`<div class="seccion"><h2 style="font-size:17px;margin-bottom:12px">👥 Usuarios</h2>
+    <div class="filtros-rol">${tab('todos','Todos')}${tab('comprador','🛍️ Compradores')}${tab('vendedor','🏪 Vendedores')}${tab('admin','🛡️ Admins')}</div>
+    <table class="tabla"><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>`+
+    (lista.length?lista.map(u=>`<tr><td>${u.nombre||''}</td><td><small>${u.email||''}</small></td><td>${u.rol}</td><td>${estado(u)}</td>
+      <td>${u.rol!=='admin'?`<span class="mini-btn" onclick="hacerRol('${u.id}','${u.rol==='vendedor'?'comprador':'vendedor'}')">${u.rol==='vendedor'?'Quitar vend.':'Hacer vend.'}</span>`:''}
+      <span class="mini-btn gris" onclick="suspenderTemporal('${u.id}')">⏳ Suspender</span>
+      ${(u.suspendido_hasta)?`<span class="mini-btn verde" onclick="quitarSuspension('${u.id}')">Quitar susp.</span>`:''}
+      <span class="mini-btn ${u.activo?'gris':'verde'}" onclick="toggleActivo('${u.id}',${u.activo})">${u.activo?'Bloquear':'Habilitar'}</span></td></tr>`).join(''):'<tr><td colspan="5"><div class="vacio">No hay usuarios en este grupo</div></td></tr>')+'</table></div>';
+}
 async function hacerRol(id,rol){ try{ await sb.from('perfiles').update({rol}).eq('id',id); toast('Rol actualizado a '+rol); adminUsr(); }catch(e){ toast('No se pudo'); } }
-async function toggleActivo(id,activo){ try{ await sb.from('perfiles').update({activo:!activo}).eq('id',id); toast(!activo?'Cuenta habilitada':'Cuenta deshabilitada'); adminUsr(); }catch(e){ toast('No se pudo'); } }
+async function toggleActivo(id,activo){ try{ await sb.from('perfiles').update({activo:!activo}).eq('id',id); toast(!activo?'Cuenta habilitada':'Cuenta bloqueada'); adminUsr(); }catch(e){ toast('No se pudo'); } }
+async function suspenderTemporal(id){
+  const dias=prompt('¿Por cuántos días suspendes a este usuario? (se reactiva solo al terminar)','7');
+  if(!dias||isNaN(dias)) return;
+  const hasta=new Date(Date.now()+parseInt(dias)*86400000).toISOString();
+  try{ const {error}=await sb.from('perfiles').update({suspendido_hasta:hasta}).eq('id',id); if(error)throw error; toast('Suspendido '+dias+' días. Se reactiva solo ⏳'); adminUsr(); }catch(e){ toast('Necesitas correr el SQL v4 para esto'); }
+}
+async function quitarSuspension(id){ try{ await sb.from('perfiles').update({suspendido_hasta:null}).eq('id',id); toast('Suspensión quitada'); adminUsr(); }catch(e){ toast('No se pudo'); } }
 async function adminConv(){
   const b=document.getElementById('adminBody');
   try{
@@ -1139,7 +1204,7 @@ function pintarSesion(logueado){
   const lbl=document.getElementById('accLoginLbl'), btn=document.getElementById('accLogin'), drop=document.getElementById('perfilDrop');
   if(logueado){
     if(!vistaRol) vistaRol=usuarioActual.rol;
-    lbl.textContent='Hola, '+(usuarioActual.nombre||'').split(' ')[0];
+    lbl.textContent='Hola, '+nombreMostrar().split(' ')[0];
     btn.onclick=()=>drop.classList.toggle('open');
     let extra='';
     if(vistaRol==='vendedor'||vistaRol==='admin') extra+='<a onclick="abrirVender()">🏪 Vender / Mis productos</a>';
@@ -1151,12 +1216,87 @@ function pintarSesion(logueado){
         '</div></div>';
     }
     const verComo=(usuarioActual.rol==='admin'&&vistaRol!=='admin')?' · viendo como '+rolLindo(vistaRol):'';
-    drop.innerHTML=`<div class="nom"><b>${usuarioActual.nombre||''}</b><small>${rolLindo(usuarioActual.rol)}${verComo}</small></div>
-      <a onclick="verCompras()">📦 Mis compras</a><a onclick="verFavoritos()">❤️ Favoritos</a><a onclick="verAvisos()">🔔 Avisos</a>${extra}${sw}
+    drop.innerHTML=`<div class="nom"><b>${nombreMostrar()}</b><small>${rolLindo(usuarioActual.rol)}${verComo}</small></div>
+      <a onclick="verCompras()">📦 Mis compras</a><a onclick="verFavoritos()">❤️ Favoritos</a><a onclick="verAvisos()">🔔 Avisos</a><a onclick="abrirPerfil()">⚙️ Mi perfil</a>${extra}${sw}
       <a class="salir" onclick="sb.auth.signOut()">🚪 Cerrar sesión</a>`;
   } else { lbl.textContent='Ingresa'; btn.onclick=abrirLogin; drop.innerHTML=`<div class="nom"><b>¡Bienvenido a CompraYa!</b><small>Ingresa para comprar y vender</small></div><a onclick="abrirLogin()">🔑 Ingresar</a><a onclick="abrirLogin();modoRegistro()">✨ Crear cuenta</a>`; }
 }
+function nombreMostrar(){ let n=(usuarioActual&&usuarioActual.nombre)||''; if(!n||n.includes('@')) n=(n.split('@')[0])||'Usuario'; return n; }
 function cambiarVista(r){ vistaRol=r; pintarSesion(true); document.getElementById('perfilDrop').classList.add('open'); toast('Ahora ves como '+rolLindo(r)); }
+/* ===== Mi perfil ===== */
+async function abrirPerfil(){
+  if(!MIID){ abrirLogin(); return; }
+  cerrarPanelesFull();
+  let extra={}; try{ const {data}=await sb.from('perfiles').select('avatar_url,descripcion').eq('id',MIID).single(); if(data) extra=data; }catch(e){}
+  const u=Object.assign({},usuarioActual||{},extra);
+  const av=u.avatar_url?`<img src="${u.avatar_url}">`:'👤';
+  abrirVista('⚙️ Mi perfil',`
+   <div class="seccion" style="max-width:560px;margin:0 auto">
+     <h2 style="font-size:17px;margin-bottom:16px">Tu perfil</h2>
+     <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px">
+       <div class="avatar-edit" id="avatarBox" onclick="document.getElementById('avFile').click()">${av}<span class="cam">📷</span></div>
+       <div><b style="font-size:16px">${nombreMostrar()}</b><br><small style="color:#999">${rolLindo(u.rol)}</small></div>
+       <input type="file" id="avFile" accept="image/*" hidden>
+     </div>
+     <div class="campo"><label>Nombre</label><input id="pfNombre" value="${(u.nombre||'').replace(/"/g,'&quot;')}"></div>
+     <div class="campo"><label>Descripción</label><textarea id="pfDesc" rows="3" placeholder="Cuéntanos sobre ti o tu tienda...">${u.descripcion||''}</textarea></div>
+     <button class="btn" style="max-width:200px" onclick="guardarPerfil()">Guardar cambios</button>
+   </div>
+   <div class="seccion" style="max-width:560px;margin:16px auto 0">
+     <h2 style="font-size:17px;margin-bottom:16px">🔒 Seguridad</h2>
+     <div class="campo"><label>Nueva contraseña</label><input id="pfPass" type="password" placeholder="Mínimo 6 caracteres"></div>
+     <button class="btn sec" style="max-width:230px" onclick="cambiarPass()">Cambiar contraseña</button>
+     <hr style="border:none;border-top:1px solid var(--linea);margin:18px 0">
+     <div class="campo"><label>Nuevo correo</label><input id="pfEmail" type="email" placeholder="nuevo@correo.com"></div>
+     <div class="campo"><label>Tu contraseña actual (para confirmar)</label><input id="pfEmailPass" type="password" placeholder="contraseña actual"></div>
+     <button class="btn sec" style="max-width:230px" onclick="cambiarEmail()">Cambiar correo</button>
+     <p style="font-size:12px;color:#999;margin-top:10px">El cambio de correo te llega por email para confirmarlo. Para entrar con Google, usa "Continuar con Google" al iniciar sesión.</p>
+   </div>`);
+  document.getElementById('avFile').addEventListener('change',e=>subirAvatar(e.target.files[0]));
+}
+async function subirAvatar(file){
+  if(!file) return;
+  try{
+    const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+    const path=MIID+'/avatar_'+Date.now()+'.'+ext;
+    const {error}=await sb.storage.from('avatares').upload(path,file,{upsert:true,contentType:file.type});
+    if(error) throw error;
+    const url=sb.storage.from('avatares').getPublicUrl(path).data.publicUrl;
+    await sb.from('perfiles').update({avatar_url:url}).eq('id',MIID);
+    usuarioActual.avatar_url=url;
+    document.getElementById('avatarBox').innerHTML=`<img src="${url}"><span class="cam">📷</span>`;
+    toast('Foto actualizada 📷');
+  }catch(e){ toast('Para la foto, corre el SQL v4 en Supabase'); }
+}
+async function guardarPerfil(){
+  const nombre=document.getElementById('pfNombre').value.trim(), desc=document.getElementById('pfDesc').value.trim();
+  if(!nombre){ toast('El nombre no puede quedar vacío'); return; }
+  try{
+    let r=await sb.from('perfiles').update({nombre,descripcion:desc}).eq('id',MIID);
+    if(r.error){ await sb.from('perfiles').update({nombre}).eq('id',MIID); }
+    try{ await sb.auth.updateUser({data:{nombre}}); }catch(e){}
+    usuarioActual.nombre=nombre; usuarioActual.descripcion=desc; pintarSesion(true);
+    toast('Perfil guardado ✅');
+  }catch(e){ toast('No se pudo guardar'); }
+}
+async function cambiarPass(){
+  const p=document.getElementById('pfPass').value;
+  if(p.length<6){ toast('Mínimo 6 caracteres'); return; }
+  try{ const {error}=await sb.auth.updateUser({password:p}); if(error)throw error; document.getElementById('pfPass').value=''; toast('Contraseña actualizada 🔒'); }
+  catch(e){ toast('No se pudo: '+e.message); }
+}
+async function cambiarEmail(){
+  const nuevo=document.getElementById('pfEmail').value.trim(), pass=document.getElementById('pfEmailPass').value;
+  if(!nuevo||!pass){ toast('Completa el correo nuevo y tu contraseña'); return; }
+  try{
+    const {data:{user}}=await sb.auth.getUser();
+    const {error:e1}=await sb.auth.signInWithPassword({email:user.email,password:pass});
+    if(e1) throw new Error('Tu contraseña actual es incorrecta');
+    const {error:e2}=await sb.auth.updateUser({email:nuevo}); if(e2) throw e2;
+    toast('Te enviamos un correo a '+nuevo+' para confirmar 📧');
+    document.getElementById('pfEmail').value=''; document.getElementById('pfEmailPass').value='';
+  }catch(e){ toast(e.message||'No se pudo'); }
+}
 document.addEventListener('click',e=>{ if(!e.target.closest('#cuenta')) document.getElementById('perfilDrop').classList.remove('open'); });
 sb.auth.onAuthStateChange(()=>refrescarSesion());
 
@@ -1201,7 +1341,7 @@ const PREG={comprar:'¿Cómo compro?',vender:'¿Cómo vendo?',pago:'Pagos',envio
 function pushB(t,c=''){ const b=document.getElementById('asisBody'); b.insertAdjacentHTML('beforeend',`<div class="burbuja ${c}">${t}</div>`); b.scrollTop=b.scrollHeight; }
 function asisResp(k){ pushB(PREG[k],'yo'); setTimeout(()=>pushB(RESP[k]),350); }
 function enviarAsis(){ const i=document.getElementById('asisTxt'),q=i.value.trim(); if(!q)return; i.value=''; pushB(q,'yo'); setTimeout(()=>pushB('Por ahora manejo las opciones de los botones. Si quieres, dale a "📞 Hablar con un agente" y te paso con soporte.'),400); }
-function llamarAgente(){ pushB('📞 Hablar con un agente','yo'); setTimeout(()=>pushB('Conectando con un agente... ⏳'),300); setTimeout(()=>pushB('¡Hola! Soy <b>Carla</b> del equipo de soporte 👩‍💼. Cuéntame tu caso y lo vemos al toque.','agente'),1600); }
+function llamarAgente(){ pushB('📞 Hablar con un agente','yo'); setTimeout(()=>pushB('Conectando con un agente... ⏳'),300); setTimeout(()=>{ pushB('¡Hola! Soy <b>Carla</b> del equipo de soporte 👩‍💼. Cuéntame tu caso y lo vemos al toque.','agente'); sonarTimbre(); },1600); }
 
 /* ===== Arranque ===== */
 /* Subcategorías para el mega menú */
@@ -1258,7 +1398,7 @@ function buildMegacat(){
 function toggleMegacat(ev){ if(ev)ev.stopPropagation(); const m=document.getElementById('megacat'); if(!m.innerHTML)buildMegacat(); m.classList.toggle('on'); cerrarBuscaDrop(); }
 function cerrarMegacat(){ document.getElementById('megacat').classList.remove('on'); }
 /* Ofertas y Cupones */
-function verOfertas(){ cerrarMegacat(); document.getElementById('tituloGrilla').textContent='🏷️ Ofertas del día'; pintarGrilla(TODOS.filter(p=>(p.descuento||0)>0)); window.scrollTo({top:document.getElementById('tituloGrilla').offsetTop-90,behavior:'smooth'}); }
+function verOfertas(){ cerrarPanelesFull(); document.getElementById('tituloGrilla').textContent='🏷️ Ofertas del día'; pintarGrilla(TODOS.filter(p=>(p.descuento||0)>0)); window.scrollTo({top:document.getElementById('tituloGrilla').offsetTop-90,behavior:'smooth'}); }
 async function verCupones(){
   cerrarMegacat();
   abrirDrawer('🎟️ Cupones','<div class="vacio">Cargando...</div>');
